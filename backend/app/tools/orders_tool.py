@@ -63,7 +63,7 @@ def update_shipping_address(db: Session, user_id: int, order_id: int, new_addres
 
 
 # Tool 3: Order Cancel Karna
-def cancel_order(db: Session, user_id: int, order_id: int) -> Dict[str, Any]:
+def cancel_order(db: Session, user_id: int, order_id: int, confirmed: bool = False, confirmation_token: str = None) -> Dict[str, Any]:
     order = db.query(Order).filter(Order.id == order_id).first()
     
     if not order:
