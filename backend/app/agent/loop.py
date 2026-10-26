@@ -12,8 +12,12 @@ from sqlalchemy.orm import Session
 from app.llm.factory import get_llm_client
 from backend.app.tools.registery import TOOL_SCHEMAS, AGENT_SYSTEM_PROMPT
 from backend.app.tools.orders_tool import get_order_status, update_shipping_address,cancel_order
+from app.agent.escalation import track_tool_failure, is_session_escalated, reset_session_tracking
 
-def run_agent_loop(db: Session, user_id: int, user_message: str) ->str:
+def run_agent_loop(db: Session, user_id: int,session_id:str, user_message: str) ->str:
+    # 1. Pehle check karein ke kya yeh session pehle hi human ke liye escalate ho chuka hai?
+    if is_session_escalated(session_id):
+        return "This chat session has been escalated to a human support agent. Please wait for a human representative to assist you."
     # llm client ko intialize krrta he (factory paatren sey fake ya gorg client mile ga)
     llm_client = get_llm_client()
 
@@ -58,7 +62,16 @@ def run_agent_loop(db: Session, user_id: int, user_message: str) ->str:
                     tool_result = cancel_order(db, user_id=user_id, order_id=args.get("order_id"))
                 else:
                     tool_result = {"status": "error", "message": f"Unknown tool: {tool_name}"}
-                
+
+                # Check agar tool execution ka result error hai toh escalation track karein
+                if tool_result.get("status") == "error":
+                    is_escalated = track_tool_failure(session_id)
+                    if is_escalated:
+                        return "You have experienced multiple tool errors. This chat has been escalated to a human support agent."
+                elif tool_result.get("status") == "success":
+                    # Agar tool successful ho jaye toh failure count reset kar dein
+                    reset_session_tracking(session_id)
+
                 # Assistant aur Tool output messages history mein append karte hain
                 messages.append({"role": "assistant", "content": response_text})
                 messages.append({"role": "system", "content": f"Tool Output: {json.dumps(tool_result)}"})
