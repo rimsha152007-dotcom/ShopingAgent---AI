@@ -10,8 +10,8 @@ from typing import List, Dict, Any
 from urllib import response
 from sqlalchemy.orm import Session
 from app.llm.factory import get_llm_client
-from backend.app.tools.registery import TOOL_SCHEMAS, AGENT_SYSTEM_PROMPT
-from backend.app.tools.orders_tool import get_order_status, update_shipping_address,cancel_order
+from app.tools.registery import TOOL_SCHEMAS, AGENT_SYSTEM_PROMPT
+from app.tools.orders_tool import get_order_status, update_shipping_address,cancel_order
 from app.agent.escalation import track_tool_failure, is_session_escalated, reset_session_tracking
 
 def run_agent_loop(db: Session, user_id: int,session_id:str, user_message: str) ->str:
