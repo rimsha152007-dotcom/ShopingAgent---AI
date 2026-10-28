@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.orders import router as orders_router
 from app.api.auth import router as auth_router
+from app.api.chat import router as chat_router 
 
 Base.metadata.create_all(bind=engine)
     
@@ -19,7 +20,12 @@ app.add_middleware(
 
 app.include_router(auth_router)
 app.include_router(orders_router)
+app.include_router(chat_router)
 
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
+
+@app.get("/")
+def read_root():
+    return {"message": "Welcome to shopAgent AI Backend!"}
